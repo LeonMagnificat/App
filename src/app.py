@@ -23,8 +23,6 @@ from sqlalchemy.orm import sessionmaker
 
 from dotenv import load_dotenv
 
-
-
 warnings.filterwarnings("ignore", category=UserWarning, module='urllib3')
 
 # Load environment variables
@@ -66,9 +64,32 @@ Base.metadata.create_all(bind=engine)
 # Initialize FastAPI app
 app = FastAPI()
 
-# Load the trained model
-MODEL_PATH = "../models/plant_disease_model.keras"
-model = tf.keras.models.load_model(MODEL_PATH)
+# Define model path relative to current file location
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+MODEL_PATH = os.path.join(MODEL_DIR, "plant_disease_model.keras")
+
+# Ensure model directory exists
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+# Load the trained model with error handling
+try:
+    if os.path.exists(MODEL_PATH):
+        model = tf.keras.models.load_model(MODEL_PATH)
+    else:
+        raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
+except Exception as e:
+    print(f"Error loading model: {str(e)}")
+    print("Initializing with a placeholder model. Please retrain with data.")
+    # Create a simple placeholder model if the original isn't found
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(128, 128, 3)),
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(38, activation='softmax')  # Assuming 38 initial classes
+    ])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Define initial class names for plant diseases
 CLASS_NAMES = [
@@ -86,8 +107,8 @@ CLASS_NAMES = [
     'Tomato___Tomato_mosaic_virus', 'Tomato___healthy'
 ]
 
-UPLOAD_DIR = "Data"
-VISUALIZATION_DIR = "visualizations"
+UPLOAD_DIR = os.path.join(BASE_DIR, "Data")
+VISUALIZATION_DIR = os.path.join(BASE_DIR, "visualizations")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VISUALIZATION_DIR, exist_ok=True)
 
@@ -289,7 +310,7 @@ async def retrain(files: List[UploadFile] = File(...),
             validation_generator = None
         
         # 5. Create a new model for fine-tuning
-        temp_model_path = os.path.join(os.path.dirname(MODEL_PATH), "temp_model.keras")
+        temp_model_path = os.path.join(MODEL_DIR, "temp_model.keras")
         model.save(temp_model_path)
         working_model = tf.keras.models.load_model(temp_model_path)
         
@@ -360,12 +381,12 @@ async def retrain(files: List[UploadFile] = File(...),
         save_visualizations(y_true, y_pred_classes, target_names)
         
         # 10. Save the fine-tuned model
-        fine_tuned_model_path = os.path.join(os.path.dirname(MODEL_PATH), "plant_disease_model.keras")
+        fine_tuned_model_path = os.path.join(MODEL_DIR, "plant_disease_model.keras")
         working_model.save(fine_tuned_model_path)
         model = tf.keras.models.load_model(fine_tuned_model_path)
         
         CLASS_NAMES = all_classes
-        with open(os.path.join(os.path.dirname(MODEL_PATH), "class_names.json"), "w") as f:
+        with open(os.path.join(MODEL_DIR, "class_names.json"), "w") as f:
             json.dump(CLASS_NAMES, f)
         
         # 11. Prepare metrics and save to database
@@ -428,7 +449,7 @@ async def retrain(files: List[UploadFile] = File(...),
                 shutil.rmtree(extract_dir)
         if os.path.exists(new_data_dir):
             shutil.rmtree(new_data_dir)
-        temp_model_path = os.path.join(os.path.dirname(MODEL_PATH), "temp_model.keras")
+        temp_model_path = os.path.join(MODEL_DIR, "temp_model.keras")
         if os.path.exists(temp_model_path):
             os.remove(temp_model_path)
 
