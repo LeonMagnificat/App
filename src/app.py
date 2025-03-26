@@ -77,7 +77,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Load the trained model
-MODEL_PATH = "models\plant_disease_model.keras"
+MODEL_PATH = "models/plant_disease_model.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Define initial class names for plant diseases
