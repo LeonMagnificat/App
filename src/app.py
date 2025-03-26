@@ -76,7 +76,7 @@ Base.metadata.create_all(bind=engine)
 # Initialize FastAPI app
 app = FastAPI()
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "models/plant_disease_model.keras")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models\plant_disease_model.keras")
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Define initial class names for plant diseases
