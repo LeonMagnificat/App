@@ -1,28 +1,36 @@
-# Use a lightweight Python image
-FROM python:3.10-slim
+# Use official Python runtime as base image
+FROM python:3.9-slim
 
-# Set the working directory
+# Set working directory in container
 WORKDIR /app
 
-# Install required OS dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 && \
-    rm -rf /var/lib/apt/lists/*
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8000
 
-# Copy and install dependencies
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libmysqlclient-dev \
+    pkg-config \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file first (optimization for caching)
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Copy the entire application
 COPY . .
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PORT=8000
+# Create necessary directories
+RUN mkdir -p Data visualizations
 
-# Expose the port for FastAPI
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Use exec form of CMD for proper signal handling
-CMD uvicorn src.app:app --host 0.0.0.0 --port $PORT
+# Command to run the application
+CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
