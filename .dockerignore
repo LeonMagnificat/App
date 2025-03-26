@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+.env
+.git
+.gitignore
+README.md
+*.zip
+Data/
+!models/plant_disease_model.keras

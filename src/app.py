@@ -76,8 +76,14 @@ Base.metadata.create_all(bind=engine)
 # Initialize FastAPI app
 app = FastAPI()
 
-# Load the trained model
-MODEL_PATH = "models/plant_disease_model.keras"
+# Get model path from environment variable or use default
+MODEL_PATH = os.getenv('MODEL_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models', 'plant_disease_model.keras'))
+
+# Verify model exists
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model file not found at {MODEL_PATH}")
+
+# Load the model
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Define initial class names for plant diseases
