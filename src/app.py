@@ -66,7 +66,7 @@ app = FastAPI()
 
 # Define model path relative to current file location
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "plant_disease_model.keras")
 
 # Ensure model directory exists
